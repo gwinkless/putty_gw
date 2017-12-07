@@ -599,7 +599,7 @@ char *make_dir_path(const char *path)
       pos += strspn(path + pos, "\\");
     }
     while (1) {
-        pos += strcspn(path + pos, "\\");
+        pos += strcspn(path + pos, "\\/");
 
         if (pos) {
             prefix = dupprintf("%.*s", pos, path);
@@ -613,26 +613,31 @@ char *make_dir_path(const char *path)
         }
 
         if (!path[pos])
-            return NULL;
-        pos += strspn(path + pos, "\\");
+            return NULL; /* everything worked */
+        pos += strspn(path + pos, "\\/");
     }
 }
-
+static char *lastslash (char *s) {
+  char *pbs, *pfs;
+  pbs=strrchr(s, '\\');
+  pfs=strrchr(s, '/');
+  return (pfs && pfs > pbs) ? pfs : pbs;
+}
 int mkdir_path(Filename *fn) {
     char *ret;
     char *pos;
-    if ((pos=strrchr(fn->path, '\\')) != NULL) { /* get the path only */
+    if ((pos=lastslash(fn->path)) != NULL) { /* get the path only */
         char *folderpath=dupprintf("%.*s", pos - fn->path, fn->path);
         /* if path already exists, tell caller we're not creating anything */
         if (GetFileAttributesA(folderpath) != INVALID_FILE_ATTRIBUTES) {
-         sfree(folderpath);
-          return 0;
+            sfree(folderpath);
+            return 0;
         }
         /* go try to create the path then */
         ret=make_dir_path(folderpath);
         sfree(folderpath);
         if (ret) {
-           sfree(ret);
+            sfree(ret);
             return 0; /* we failed, just discard the error for now */
         }
     } else {
