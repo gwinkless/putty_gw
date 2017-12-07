@@ -503,6 +503,7 @@ static Filename *xlatlognam(Filename *src, char *hostname, int port,
     }
     buffer[buflen] = '\0';
 
+    buffer=expand_envstrings(buffer);
     ret = filename_from_str(buffer);
     sfree(buffer);
     return ret;
