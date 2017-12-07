@@ -605,8 +605,13 @@ char *make_dir_path(const char *path)
             prefix = dupprintf("%.*s", pos, path);
             if ((CreateDirectory(prefix, NULL)==0)
                   && ((lasterr=GetLastError()) != ERROR_ALREADY_EXISTS)) {
+                char *ret, *err;
+                err=win_strerror(lasterr);
+                if (ret=strchr(err, '\r')) *ret='\0'; /* we don't want a \r in our string, thanks */
+                ret=dupprintf("%s: mkdir: %s", prefix, err);
                 sfree(prefix);
-                return win_strerror(lasterr);
+                sfree(err);
+                return ret;
             }
 
             sfree(prefix);
@@ -623,27 +628,25 @@ static char *lastslash (char *s) {
   pfs=strrchr(s, '/');
   return (pfs && pfs > pbs) ? pfs : pbs;
 }
-int mkdir_path(Filename *fn) {
-    char *ret;
+char *mkdir_path(Filename *fn) {
+    char *ret=NULL;
     char *pos;
     if ((pos=lastslash(fn->path)) != NULL) { /* get the path only */
         char *folderpath=dupprintf("%.*s", pos - fn->path, fn->path);
         /* if path already exists, tell caller we're not creating anything */
         if (GetFileAttributesA(folderpath) != INVALID_FILE_ATTRIBUTES) {
-            sfree(folderpath);
-            return 0;
+/* we return an empty string, because the error won't be ours but we need to return non-NULL */
+            ret=dupprintf("");
+        } else {
+          /* go try to create the path then */
+          ret=make_dir_path(folderpath);
         }
-        /* go try to create the path then */
-        ret=make_dir_path(folderpath);
         sfree(folderpath);
-        if (ret) {
-            sfree(ret);
-            return 0; /* we failed, just discard the error for now */
-        }
     } else {
-        return 0; /* tell parent we didn't create a path */
+/* we return an empty string because we need the parent to understand we haven't changed anything */
+        ret=dupprintf("");
     }
-    return 1; /* all fine, ta */
+    return ret;
 }
 char *expand_envstrings(char *str) {
     char *expanded_path;

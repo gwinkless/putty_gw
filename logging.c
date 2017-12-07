@@ -88,6 +88,7 @@ static void logfopen_callback(void *handle, int mode)
     char buf[256], *event;
     struct tm tm;
     const char *fmode;
+    char *mkdir_err;
     int shout = FALSE;
 
     if (mode == 0) {
@@ -96,7 +97,7 @@ static void logfopen_callback(void *handle, int mode)
 	fmode = (mode == 1 ? "ab" : "wb");
   do {
 	ctx->lgfp = f_open(ctx->currlogfilename, fmode, FALSE);
-  } while (ctx->lgfp==NULL && mkdir_path(ctx->currlogfilename)!=0);
+  } while (ctx->lgfp==NULL && ((mkdir_err=mkdir_path(ctx->currlogfilename))==NULL));
 	if (ctx->lgfp) {
 	    ctx->state = L_OPEN;
         } else {
@@ -113,7 +114,7 @@ static void logfopen_callback(void *handle, int mode)
 		  " =~=~=~=~=~=~=~=~=~=~=~=\r\n", buf);
     }
 
-    event = dupprintf("%s session log (%s mode) to file: %s",
+    event = dupprintf("%s session log (%s mode) to file: %s %s",
 		      ctx->state == L_ERROR ?
 		      (mode == 0 ? "Disabled writing" : "Error writing") :
 		      (mode == 1 ? "Appending" : "Writing new"),
@@ -122,7 +123,9 @@ static void logfopen_callback(void *handle, int mode)
 		       ctx->logtype == LGTYP_PACKETS ? "SSH packets" :
 		       ctx->logtype == LGTYP_SSHRAW ? "SSH raw data" :
 		       "unknown"),
-		      filename_to_str(ctx->currlogfilename));
+		      filename_to_str(ctx->currlogfilename),
+          mkdir_err ? mkdir_err : "");
+    sfree(mkdir_err);
     logevent(ctx->frontend, event);
     if (shout) {
         /*
@@ -142,7 +145,6 @@ static void logfopen_callback(void *handle, int mode)
         from_backend(ctx->frontend, 1, "\r\n", 2);
     }
     sfree(event);
-
     /*
      * Having either succeeded or failed in opening the log file,
      * we should write any queued data out.
