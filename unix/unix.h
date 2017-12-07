@@ -255,6 +255,7 @@ int nonblock(int);
 int no_nonblock(int);
 char *make_dir_and_check_ours(const char *dirname);
 char *make_dir_path(const char *path, mode_t mode);
+char *expand_envstrings(char *);
 
 /*
  * Exports from unicode.c.

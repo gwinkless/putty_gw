@@ -13,6 +13,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <pwd.h>
+#include <wordexp.h>
 
 #include "putty.h"
 
@@ -327,7 +328,6 @@ char *make_dir_path(const char *path, mode_t mode)
 {
     int pos = 0;
     char *prefix;
-
     while (1) {
         pos += strcspn(path + pos, "/");
 
@@ -348,4 +348,36 @@ char *make_dir_path(const char *path, mode_t mode)
             return NULL;
         pos += strspn(path + pos, "/");
     }
+}
+
+char *expand_envstrings(char *str) {
+    char *expanded_path, *dest, *oIFS;
+    wordexp_t we;
+    int i, j;
+    if ((dest=smalloc(strlen(str)*2+1)) != NULL) { /* max 2 x len all quotes */
+/* backslash any quotes */
+        for (i=0, j=0; str[i]; i++) {
+           if (str[i]=='\'' || (str[i]=='\\' && str[i+1]!='$') || str[i]=='\"') {
+              dest[j++]='\\';
+           }
+           dest[j++]=str[i];
+        }
+        dest[j]='\0';
+
+/* make sure we get everything in one string and don't lose multi-spaces
+   we assume no-one uses the backspace character in filenames (?) */
+        oIFS=getenv("IFS") ? strdup(getenv("IFS")) : NULL;
+        setenv("IFS", "\010", 1);
+/* now parse */
+        if (wordexp(dest, &we, WRDE_NOCMD) == 0) {
+            if ((expanded_path=strdup(we.we_wordv[0])) != NULL) {
+                sfree(str);
+                str=expanded_path;
+            }
+            wordfree(&we);
+        }
+        if (oIFS) setenv("IFS", oIFS, 1); else unsetenv("IFS");
+        free(oIFS);
+    }
+    return str;
 }

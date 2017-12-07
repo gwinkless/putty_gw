@@ -586,3 +586,15 @@ FontSpec *fontspec_deserialise(void *vdata, int maxsize, int *used)
                         GET_32BIT_MSB_FIRST(end + 4),
                         GET_32BIT_MSB_FIRST(end + 8));
 }
+
+char *expand_envstrings(char *str) {
+    char *expanded_path;
+    int newlen;
+    newlen=ExpandEnvironmentStringsA(str, NULL, 0); /* get target len */
+    if ((expanded_path=smalloc(newlen)) != NULL) {
+        ExpandEnvironmentStringsA(str, expanded_path, newlen);
+        sfree(str);
+        str=expanded_path;
+    }
+    return str;
+}
