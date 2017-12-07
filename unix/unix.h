@@ -255,7 +255,7 @@ int nonblock(int);
 int no_nonblock(int);
 char *make_dir_and_check_ours(const char *dirname);
 char *make_dir_path(const char *path, mode_t mode);
-int mkdir_path(struct Filename *);
+char *mkdir_path(struct Filename *);
 char *expand_envstrings(char *);
 
 /*
