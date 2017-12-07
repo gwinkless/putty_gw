@@ -88,7 +88,7 @@ static void logfopen_callback(void *handle, int mode)
     char buf[256], *event;
     struct tm tm;
     const char *fmode;
-    char *mkdir_err;
+    char *mkdir_err=NULL;
     int shout = FALSE;
 
     if (mode == 0) {
