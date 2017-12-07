@@ -94,7 +94,9 @@ static void logfopen_callback(void *handle, int mode)
 	ctx->state = L_ERROR;	       /* disable logging */
     } else {
 	fmode = (mode == 1 ? "ab" : "wb");
+  do {
 	ctx->lgfp = f_open(ctx->currlogfilename, fmode, FALSE);
+  } while (ctx->lgfp==NULL && mkdir_path(ctx->currlogfilename)!=0);
 	if (ctx->lgfp) {
 	    ctx->state = L_OPEN;
         } else {

@@ -587,6 +587,69 @@ FontSpec *fontspec_deserialise(void *vdata, int maxsize, int *used)
                         GET_32BIT_MSB_FIRST(end + 8));
 }
 
+char *make_dir_path(const char *path)
+{
+    int pos = 0;
+    char *prefix;
+    DWORD lasterr;
+    LPVOID lpMsgBuf;
+    if (path[0]=='\\' && path[1]=='\\') { /* assume it's a UNC path */
+/* we can't create the initial share-name, so skip past it */
+      pos = 2 + strcspn(path + 2, "\\");
+      pos += strspn(path + pos, "\\");
+    }
+    while (1) {
+        pos += strcspn(path + pos, "\\");
+
+        if (pos) {
+            prefix = dupprintf("%.*s", pos, path);
+            if ((CreateDirectory(prefix, NULL)==0)
+                  && ((lasterr=GetLastError()) != ERROR_ALREADY_EXISTS)) {
+                FormatMessage(
+                              FORMAT_MESSAGE_ALLOCATE_BUFFER |
+                              FORMAT_MESSAGE_FROM_SYSTEM |
+                              FORMAT_MESSAGE_IGNORE_INSERTS,
+                              NULL,
+                              lasterr,
+                              MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                              (LPTSTR) &lpMsgBuf,
+                              0, NULL );
+                char *ret = dupprintf("%s: mkdir: %s", prefix, lpMsgBuf);
+                sfree(prefix);
+                return ret;
+            }
+
+            sfree(prefix);
+        }
+
+        if (!path[pos])
+            return NULL;
+        pos += strspn(path + pos, "\\");
+    }
+}
+
+int mkdir_path(Filename *fn) {
+    char *ret;
+    char *pos;
+    if ((pos=strrchr(fn->path, '\\')) != NULL) { /* get the path only */
+        char *folderpath=dupprintf("%.*s", pos - fn->path, fn->path);
+        /* if path already exists, tell caller we're not creating anything */
+        if (GetFileAttributesA(folderpath) != INVALID_FILE_ATTRIBUTES) {
+         sfree(folderpath);
+          return 0;
+        }
+        /* go try to create the path then */
+        ret=make_dir_path(folderpath);
+        sfree(folderpath);
+        if (ret) {
+           sfree(ret);
+            return 0; /* we failed, just discard the error for now */
+        }
+    } else {
+        return 0; /* tell parent we didn't create a path */
+    }
+    return 1; /* all fine, ta */
+}
 char *expand_envstrings(char *str) {
     char *expanded_path;
     int newlen;
