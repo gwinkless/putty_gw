@@ -350,6 +350,30 @@ char *make_dir_path(const char *path, mode_t mode)
     }
 }
 
+int mkdir_path(Filename *fn) {
+    char *ret;
+    char *pos;
+    if ((pos=strrchr(fn->path, '/')) != NULL) { /* get the path only */
+        char *folderpath=dupprintf("%.*s", pos - fn->path, fn->path);
+        /* if path already exists, tell caller we're not creating anything */
+        if (access(folderpath, F_OK)==0) {
+          sfree(folderpath);
+          return 0;
+        }
+        /* go try to create the path then */
+        ret=make_dir_path(folderpath, 0777);
+        sfree(folderpath);
+        if (ret) {
+            sfree(ret);
+            return 0; /* we failed, just discard the error for now */
+        }
+    } else {
+fprintf(stderr, "no / in %s\n", fn->path);
+        return 0; /* tell parent we didn't create a path */
+    }
+    return 1; /* all fine, ta */
+}
+
 char *expand_envstrings(char *str) {
     char *expanded_path, *dest, *oIFS;
     wordexp_t we;
