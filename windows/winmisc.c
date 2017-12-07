@@ -606,18 +606,8 @@ char *make_dir_path(const char *path)
             prefix = dupprintf("%.*s", pos, path);
             if ((CreateDirectory(prefix, NULL)==0)
                   && ((lasterr=GetLastError()) != ERROR_ALREADY_EXISTS)) {
-                FormatMessage(
-                              FORMAT_MESSAGE_ALLOCATE_BUFFER |
-                              FORMAT_MESSAGE_FROM_SYSTEM |
-                              FORMAT_MESSAGE_IGNORE_INSERTS,
-                              NULL,
-                              lasterr,
-                              MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                              (LPTSTR) &lpMsgBuf,
-                              0, NULL );
-                char *ret = dupprintf("%s: mkdir: %s", prefix, lpMsgBuf);
                 sfree(prefix);
-                return ret;
+                return win_strerror(lasterr);
             }
 
             sfree(prefix);
