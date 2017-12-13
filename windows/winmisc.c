@@ -592,7 +592,6 @@ char *make_dir_path(const char *path)
     int pos = 0;
     char *prefix;
     DWORD lasterr;
-    LPVOID lpMsgBuf;
     if (path[0]=='\\' && path[1]=='\\') { /* assume it's a UNC path */
 /* we can't create the initial share-name, so skip past it */
       pos = 2 + strcspn(path + 2, "\\");
@@ -605,12 +604,12 @@ char *make_dir_path(const char *path)
             prefix = dupprintf("%.*s", pos, path);
             if ((CreateDirectory(prefix, NULL)==0)
                   && ((lasterr=GetLastError()) != ERROR_ALREADY_EXISTS)) {
-                char *ret, *err;
+                char *ret;
+                const char *err;
                 err=win_strerror(lasterr);
                 if (ret=strchr(err, '\r')) *ret='\0'; /* we don't want a \r in our string, thanks */
                 ret=dupprintf("%s: mkdir: %s", prefix, err);
                 sfree(prefix);
-                sfree(err);
                 return ret;
             }
 
