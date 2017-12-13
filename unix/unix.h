@@ -257,6 +257,7 @@ char *make_dir_and_check_ours(const char *dirname);
 char *make_dir_path(const char *path, mode_t mode);
 char *mkdir_path(struct Filename *);
 char *expand_envstrings(char *);
+struct Filename *ConvertV70LogFileToV71(struct Filename *);
 
 /*
  * Exports from unicode.c.

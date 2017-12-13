@@ -658,3 +658,13 @@ char *expand_envstrings(char *str) {
     }
     return str;
 }
+
+Filename *ConvertV70LogFileToV71(Filename *fp) {
+/* in v71 we started allowing environment variable expansion in logfilenames, 
+   so you can do eg %USERPROFILE%/puttylogs/&H&Y&M&D&T.log; unfortunately because
+   $ is a valid filename character on unix, and on v70 we would have simply written
+   the string as-was, we have to convert any string loaded from a pre-v71 conf
+   and (on unix) insert backslashes before $, In windows, we don't do that, so
+   this is basically just a stub function */
+    return fp;
+}

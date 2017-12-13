@@ -523,6 +523,7 @@ void restrict_process_acl(void);
 GLOBAL int restricted_acl;
 char *mkdir_path(struct Filename *);
 char *expand_envstrings(char *);
+struct Filename *ConvertV70LogFileToV71(struct Filename *);
 
 /* A few pieces of up-to-date Windows API definition needed for older
  * compilers. */
