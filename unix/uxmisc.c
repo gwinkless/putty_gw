@@ -400,3 +400,29 @@ char *expand_envstrings(char *str) {
     }
     return str;
 }
+
+Filename *ConvertV70LogFileToV71(Filename *fp) {
+/* in v71 we started allowing environment variable expansion in logfilenames, 
+   so you can do eg $HOME/puttylogs/&H&Y&M&D&T.log; unfortunately because
+   $ is a valid filename character, and on v70 we would have simply written
+   the string as-was, we have to convert any string loaded from a pre-v71 conf
+   and insert backslashes before $. This support function does that. */
+    int i, j;
+    char *newpath;
+    for (j=0,i=0; fp->path[i]; i++) if (fp->path[i]=='$') j++;
+/* i now contains the string length, j contains the number of $ signs */
+    if (j) {
+        newpath=smalloc(j+i+1);
+        for (i=0,j=0; fp->path[i]; i++) {
+            if (fp->path[i] == '$') {
+                newpath[i+j] = '\\';
+                j++;
+            }
+            newpath[i+j] = fp->path[i];
+        }
+        newpath[i+j+1]='\0';
+        sfree(fp->path);
+        fp->path = newpath;
+    }
+    return fp;
+}

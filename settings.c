@@ -467,7 +467,7 @@ void save_open_settings(void *sesskey, Conf *conf)
 
     write_setting_i(sesskey, "Present", 1);
     write_setting_s(sesskey, "HostName", conf_get_str(conf, CONF_host));
-    write_setting_filename(sesskey, "LogFileName", conf_get_filename(conf, CONF_logfilename));
+    write_setting_filename(sesskey, "LogFileNameV71", conf_get_filename(conf, CONF_logfilename));
     write_setting_i(sesskey, "LogType", conf_get_int(conf, CONF_logtype));
     write_setting_i(sesskey, "LogFileClash", conf_get_int(conf, CONF_logxfovr));
     write_setting_i(sesskey, "LogFlush", conf_get_int(conf, CONF_logflush));
@@ -707,7 +707,7 @@ void load_settings(const char *section, Conf *conf)
 void load_open_settings(void *sesskey, Conf *conf)
 {
     int i;
-    char *prot;
+    char *prot, *discard;
 
     conf_set_int(conf, CONF_ssh_subsys, 0);   /* FIXME: load this properly */
     conf_set_str(conf, CONF_remote_cmd, "");
@@ -715,7 +715,25 @@ void load_open_settings(void *sesskey, Conf *conf)
     conf_set_str(conf, CONF_ssh_nc_host, "");
 
     gpps(sesskey, "HostName", "", conf, CONF_host);
-    gppfile(sesskey, "LogFileName", conf, CONF_logfilename);
+/* GW 20171213 now we expand system variables in logfilename, under unix  we have
+               to grok any pre-v71 LogFileName values for $ */
+/* if a v71 version of LogFileName exists, we don't want to modify it. We use
+   _raw to check or its existence because gppfile will return the default value
+   (putty.log) when we haven't configured one */
+    if ((discard=gpps_raw(sesskey, "LogFileNameV71", NULL)) != NULL) {
+        sfree(discard);
+        gppfile(sesskey, "LogFileNameV71", conf, CONF_logfilename);
+    } else if ((discard=gpps_raw(sesskey, "LogFileName", "")) != NULL) {
+        sfree(discard);
+        gppfile(sesskey, "LogFileName", conf, CONF_logfilename);
+/* we need to write the v71 version. Under windows, that's just a null function,
+   but unix will insert backslashes before $ symbols */
+        write_setting_filename(sesskey, "LogFileNameV71", 
+            ConvertV70LogFileToV71(conf_get_filename(conf, CONF_logfilename))
+        );
+    } else {
+        gppfile(sesskey, "LogFileName", conf, CONF_logfilename);
+    }
     gppi(sesskey, "LogType", 0, conf, CONF_logtype);
     gppi(sesskey, "LogFileClash", LGXF_ASK, conf, CONF_logxfovr);
     gppi(sesskey, "LogFlush", 1, conf, CONF_logflush);
