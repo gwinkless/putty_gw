@@ -636,7 +636,7 @@ char *mkdir_path(Filename *fn) {
         /* if path already exists, tell caller we're not creating anything */
         if (GetFileAttributesA(folderpath) != INVALID_FILE_ATTRIBUTES) {
 /* we return an empty string, because the error won't be ours but we need to return non-NULL */
-            ret=dupprintf("");
+            ret=dupstr("");
         } else {
           /* go try to create the path then */
           ret=make_dir_path(folderpath);
@@ -644,7 +644,7 @@ char *mkdir_path(Filename *fn) {
         sfree(folderpath);
     } else {
 /* we return an empty string because we need the parent to understand we haven't changed anything */
-        ret=dupprintf("");
+        ret=dupstr("");
     }
     return ret;
 }
