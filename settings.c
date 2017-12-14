@@ -725,12 +725,8 @@ void load_open_settings(void *sesskey, Conf *conf)
         gppfile(sesskey, "LogFileNameV71", conf, CONF_logfilename);
     } else if ((discard=gpps_raw(sesskey, "LogFileName", NULL)) != NULL) {
         sfree(discard);
-        gppfile(sesskey, "LogFileName", conf, CONF_logfilename);
-/* we need to write the v71 version. Under windows, that's just a null function,
-   but unix will insert backslashes before $ symbols */
-        write_setting_filename(sesskey, "LogFileNameV71", 
-            ConvertV70LogFileToV71(conf_get_filename(conf, CONF_logfilename))
-        );
+        gppfile(sesskey, "LogFileName", conf, CONF_logfilename); 
+        ConvertV70LogFileToV71(conf_get_filename(conf, CONF_logfilename));
     } else {
         gppfile(sesskey, "LogFileName", conf, CONF_logfilename);
     }
