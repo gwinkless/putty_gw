@@ -357,14 +357,14 @@ char *mkdir_path(Filename *fn) {
         char *folderpath=dupprintf("%.*s", pos - fn->path, fn->path);
         if (access(folderpath, F_OK)==0) {
             /* if path already exists, tell caller we're not creating anything */
-            ret=dupprintf("");
+            ret=dupstr("");
         } else {
             /* go try to create the path then */
             ret=make_dir_path(folderpath, 0777);
         }
         sfree(folderpath);
     } else {
-        ret=dupprintf(""); /* tell parent we didn't create a path */
+        ret=dupstr(""); /* tell parent we didn't create a path */
     }
     return ret;
 }
