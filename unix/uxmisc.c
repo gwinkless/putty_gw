@@ -373,10 +373,10 @@ char *expand_envstrings(char *str) {
     char *expanded_path, *dest, *oIFS;
     wordexp_t we;
     int i, j;
-    if ((dest=smalloc(strlen(str)*2+1)) != NULL) { /* max 2 x len all quotes */
-/* backslash any quotes */
+    if ((dest=smalloc(strlen(str)*2+1)) != NULL) { /* max 2 x len all expanded */
+/* backslash any quotes or other special characters */
         for (i=0, j=0; str[i]; i++) {
-           if (str[i]=='\'' || (str[i]=='\\' && str[i+1]!='$') || str[i]=='\"') {
+           if ((str[i]=='\\' && str[i+1]!='$' && str[i+1]!='~') || strchr("'\"[*?]#`|&;<>()", str[i])) {
               dest[j++]='\\';
            }
            dest[j++]=str[i];
@@ -409,12 +409,12 @@ Filename *ConvertV70LogFileToV71(Filename *fp) {
    and insert backslashes before $. This support function does that. */
     int i, j;
     char *newpath;
-    for (j=0,i=0; fp->path[i]; i++) if (fp->path[i]=='$') j++;
+    for (j=0,i=0; fp->path[i]; i++) if (fp->path[i]=='$' || fp->path[i]=='~') j++;
 /* i now contains the string length, j contains the number of $ signs */
     if (j) {
         newpath=smalloc(j+i+1);
         for (i=0,j=0; fp->path[i]; i++) {
-            if (fp->path[i] == '$') {
+            if (fp->path[i] == '$' || fp->path[i]=='~') {
                 newpath[i+j] = '\\';
                 j++;
             }
