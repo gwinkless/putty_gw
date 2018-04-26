@@ -1628,6 +1628,9 @@ void setup_config_box(struct controlbox *b, int midsession,
     ctrl_checkbox(s, "Flush log file frequently", 'u',
 		 HELPCTX(logging_flush),
 		 conf_checkbox_handler, I(CONF_logflush));
+    ctrl_checkbox(s, "Create folders if required", 'q',
+		 HELPCTX(logging_mkdir),
+		 conf_checkbox_handler, I(CONF_logmkdir));
 
     if ((midsession && protocol == PROT_SSH) ||
 	(!midsession && backend_from_proto(PROT_SSH))) {

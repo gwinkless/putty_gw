@@ -20,6 +20,7 @@ struct LogContext {
     void *frontend;
     Conf *conf;
     int logtype;		       /* cached out of conf */
+    int logmkdir;          /* cached out of conf */
 };
 
 static Filename *xlatlognam(Filename *s, char *hostname, int port,
@@ -97,7 +98,7 @@ static void logfopen_callback(void *handle, int mode)
 	fmode = (mode == 1 ? "ab" : "wb");
 
 	ctx->lgfp = f_open(ctx->currlogfilename, fmode, FALSE);
-  if ((ctx->lgfp==NULL) && ((mkdir_err=mkdir_path(ctx->currlogfilename))==NULL)) { /* if we created a new path, try again */
+  if (ctx->logmkdir && (ctx->lgfp==NULL) && ((mkdir_err=mkdir_path(ctx->currlogfilename))==NULL)) { /* if we created a new path, try again */
     ctx->lgfp = f_open(ctx->currlogfilename, fmode, FALSE);
   }
   
@@ -390,6 +391,7 @@ void *log_init(void *frontend, Conf *conf)
     ctx->frontend = frontend;
     ctx->conf = conf_copy(conf);
     ctx->logtype = conf_get_int(ctx->conf, CONF_logtype);
+    ctx->logmkdir = conf_get_int(ctx->conf, CONF_logmkdir);
     ctx->currlogfilename = NULL;
     bufchain_init(&ctx->queue);
     return ctx;
