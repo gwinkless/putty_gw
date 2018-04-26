@@ -13,7 +13,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <pwd.h>
-#include <wordexp.h>
+#include <ctype.h>
 
 #include "putty.h"
 
@@ -370,35 +370,56 @@ char *mkdir_path(Filename *fn) {
 }
 
 char *expand_envstrings(char *str) {
-    char *expanded_path, *dest, *oIFS;
-    wordexp_t we;
-    int i, j;
-    if ((dest=smalloc(strlen(str)*2+1)) != NULL) { /* max 2 x len all expanded */
-/* backslash any quotes or other special characters */
-        for (i=0, j=0; str[i]; i++) {
-           if ((str[i]=='\\' && str[i+1]!='$' && str[i+1]!='~') || strchr("'\"[*?]#`|&;<>()", str[i])) {
-              dest[j++]='\\';
-           }
-           dest[j++]=str[i];
-        }
-        dest[j]='\0';
 
-/* make sure we get everything in one string and don't lose multi-spaces
-   we assume no-one uses the backspace character in filenames (?) */
-        oIFS=getenv("IFS") ? strdup(getenv("IFS")) : NULL;
-        setenv("IFS", "\010", 1);
-/* now parse */
-        if (wordexp(dest, &we, WRDE_NOCMD) == 0) {
-            if ((expanded_path=strdup(we.we_wordv[0])) != NULL) {
-                sfree(str);
-                str=expanded_path;
+/* we just expand ~, ${envname} or $envname. No other expansion is performed. */
+
+    
+    char *dest=NULL, *varname, *tmps;
+    int i, j, skipnext=0, pass, elen;
+/* first pass gets length, second does the actual copy */    
+    for (pass=0; pass < 2; pass++) {
+        for (i=0, j=0; str[i]; i++) {
+            if (str[i]=='\\' && (str[i+1]=='$' || str[i+1]=='~')) {
+                skipnext=1;
+            } else if (skipnext==0 && str[i]=='$') {
+                /* get the env var that this corresponds to */
+                if (str[i+1]=='{' && ((tmps=strchr(&str[i+2], '}'))!=NULL)) {
+/* I'm going to assume you're not an idiot and we won't have invalid chars inside
+   the ${}. That may be erroneous, but the worst that will happen is we get no 
+   answer from getenv() */                    
+                    elen=tmps-&str[i+2];
+                    varname=dupprintf("%.*s", elen, &str[i+2]);
+                    i+=elen+2;
+                } else if (isalpha(str[i+1]) || str[i+1]=='_') {
+                    elen=1;
+                    while (isalnum(str[i+elen+1]) || str[i+elen+1]=='_') elen++;
+                    varname=dupprintf("%.*s", elen, &str[i+1]);
+                    i+=elen;
+                } else {
+                    elen=-1;
+                }
+                if (elen > 0) {
+                    if ((tmps=getenv(varname))!=NULL) {
+                        j+=(pass==1) ? sprintf(&dest[j], "%s", tmps) : strlen(tmps);
+                    }
+                    sfree(varname);
+                }
+            } else if (skipnext==0 && str[i]=='~') {
+                if ((tmps=getenv("HOME"))!=NULL) {
+                    j+=(pass==1) ? sprintf(&dest[j], "%s", tmps) : strlen(tmps);
+                }
+            } else {
+                if (pass) dest[j]=str[i];
+                j++;
+                skipnext=0;
             }
-            wordfree(&we);
         }
-        if (oIFS) setenv("IFS", oIFS, 1); else unsetenv("IFS");
-        free(oIFS);
+        if (pass==0) dest=smalloc(j+1);
     }
-    return str;
+    dest[j]='\0';
+    sfree(str);
+
+    return dest;
 }
 
 Filename *ConvertV70LogFileToV71(Filename *fp) {
