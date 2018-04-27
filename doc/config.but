@@ -217,6 +217,10 @@ like
 \c log-server1.example.com-20010528-110859.dat
 \c log-unixbox.somewhere.org-20010611-221001.dat
 
+In addition some limited environment variable substitution will be performed,
+so eg %USERPROFILE% on Windows or $\{USERNAME\} on Unix will be substituted with
+the value from the environment.
+
 \S{config-logfileexists} \q{What to do if the log file already exists}
 
 \cfg{winhelp-topic}{logging.exists}
@@ -245,6 +249,18 @@ slowly with logging enabled, you could try unchecking this option. Be
 warned that the log file may not always be up to date as a result
 (although it will of course be flushed when it is closed, for instance
 at the end of a session).
+
+\S{config-logmkdir} \I{log file, folders, directories}\q{Create folders if required}
+
+\cfg{winhelp-topic}{logging.mkdir}
+
+This option allows you to control whether putty will create folders that do
+not exist.
+
+This can be very useful to break logfiles over folders by date, for example:
+
+\c{c:\\puttylogs\\&h\\&y\\&m\\&d\\&t.dat}
+
 
 \S{config-logssh} Options specific to \i{SSH packet log}ging
 
