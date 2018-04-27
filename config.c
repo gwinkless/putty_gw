@@ -1617,7 +1617,13 @@ void setup_config_box(struct controlbox *b, int midsession,
 		 HELPCTX(logging_filename),
 		 conf_filesel_handler, I(CONF_logfilename));
     ctrl_text(s, "(Log file name can contain &Y, &M, &D for date,"
-	      " &T for time, &H for host name, and &P for port number)",
+	        " &T for time, &H for host name, &P for port number and "
+#ifdef _WINDOWS 
+        "%ENV%"
+#else
+        "${ENV}"
+#endif
+        " to substitute from the environment)",
 	      HELPCTX(logging_filename));
     ctrl_radiobuttons(s, "What to do if the log file already exists:", 'e', 1,
 		      HELPCTX(logging_exists),
