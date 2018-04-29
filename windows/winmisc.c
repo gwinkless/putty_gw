@@ -626,7 +626,7 @@ static char *lastslash (char *s) {
   char *pbs, *pfs;
   pbs=strrchr(s, '\\');
   pfs=strrchr(s, '/');
-  return (pfs && pfs > pbs) ? pfs : pbs;
+  return (!pbs || (pfs && (pfs > pbs))) ? pfs : pbs;
 }
 char *mkdir_path(Filename *fn) {
     char *ret=NULL;
