@@ -254,7 +254,7 @@ at the end of a session).
 
 \cfg{winhelp-topic}{logging.mkdir}
 
-This option allows you to control whether putty will create folders that do
+This option allows you to control whether PuTTY will create folders that do
 not exist.
 
 This can be very useful to break logfiles over folders by date, for example:
