@@ -351,6 +351,11 @@ char *make_dir_path(const char *path, mode_t mode)
 }
 
 char *mkdir_path(Filename *fn) {
+/* returns 
+     NULL, if the path was successfully created
+     a pointer to an error string (as returned by make_dir_path) on failure. 
+     a pointer to the empty string "" if we didn't attempt to create a folder 
+*/
     char *ret=NULL;
     char *pos;
     if ((pos=strrchr(fn->path, '/')) != NULL) { /* get the path only */
