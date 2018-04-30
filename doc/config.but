@@ -217,9 +217,24 @@ like
 \c log-server1.example.com-20010528-110859.dat
 \c log-unixbox.somewhere.org-20010611-221001.dat
 
-In addition some limited environment variable substitution will be performed,
-so eg %USERPROFILE% on Windows or $\{USERNAME\} on Unix will be substituted with
-the value from the environment.
+In addition some limited environment variable substitution will be performed:
+values inside %s (on Windows) or following a $ sign and optionally enclosed 
+in braces (on Unix) will be substituted with the value from the environment.
+
+So for example if a Windows user wished to store logs in a personal area, rather
+than system-wide, using \c{%USERPROFILE%\\PuTTYlogs} would store them in a 
+PuTTYlogs folder in the user folder. 
+
+
+
+On Unix PuTTY will also substitute the home folder of a user if the log path
+starts with the username prefixed with ~, eg \c{~PuTTY/logs/$\{USERNAME\}/&H.log}
+would expand to a file named after the current host inside a subfolder named after
+the current user within the logs folder in the home folder of the "PuTTY" user.
+
+Users wishing to insert a literal $ inside a log path can escape the substitution
+by prefixing with a backslash.
+
 
 \S{config-logfileexists} \q{What to do if the log file already exists}
 
