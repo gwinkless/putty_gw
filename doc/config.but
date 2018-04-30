@@ -232,8 +232,8 @@ starts with the username prefixed with ~, eg \c{~PuTTY/logs/$\{USERNAME\}/&H.log
 would expand to a file named after the current host inside a subfolder named after
 the current user within the logs folder in the home folder of the "PuTTY" user.
 
-Users wishing to insert a literal $ inside a log path can escape the substitution
-by prefixing with a backslash.
+Users wishing to insert a literal \c{$}, initial \c{~} or \c{\\} inside a log path can escape
+the substitution by prefixing with \c{\\}.
 
 
 \S{config-logfileexists} \q{What to do if the log file already exists}
