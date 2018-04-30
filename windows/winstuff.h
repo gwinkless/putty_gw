@@ -648,4 +648,5 @@ char *get_jumplist_registry_entries(void);
 #define CLIPUI_DEFAULT_MOUSE CLIPUI_EXPLICIT
 #define CLIPUI_DEFAULT_INS CLIPUI_EXPLICIT
 
+#define PLATFORMENVSTRING "%ENV%"
 #endif

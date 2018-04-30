@@ -348,4 +348,5 @@ int so_peercred(int fd, int *pid, int *uid, int *gid);
 #define DEFAULT_GTK_FONT "server:fixed"
 #endif
 
+#define PLATFORMENVSTRING "${ENV}"
 #endif
