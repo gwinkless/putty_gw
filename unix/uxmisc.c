@@ -371,48 +371,64 @@ char *mkdir_path(Filename *fn) {
 
 char *expand_envstrings(char *str) {
 
-/* we just expand ~, ${envname} or $envname. No other expansion is performed. */
+/* we just expand ~/, ~user/, ${envname} or $envname. No other expansion is performed. */
 
     
     char *dest=NULL, *varname, *tmps;
-    int i, j, skipnext=0, pass, elen;
+    int i, j, skipnext=0, pass;
+    size_t elen;
 /* first pass gets length, second does the actual copy */    
     for (pass=0; pass < 2; pass++) {
-        for (i=0, j=0; str[i]; i++) {
-            if (str[i]=='\\' && (str[i+1]=='$' || str[i+1]=='~')) {
+        i=0, j=0;
+        if (str[0]=='~') { /* special case - we only test for ~ at the start */
+            struct passwd *pw;
+            elen=0; 
+            if (str[1]=='/' || str[1]=='\0') { /* grab our home directory */
+                tmps=get_username(); /* slightly more careful than just getuid() */
+            } else {
+                while (str[elen+1] && str[elen+1]!='/') elen++;
+                tmps=dupprintf("%.*s", elen, &str[1]);
+            }
+            if (tmps) {
+                if ((pw=getpwnam(tmps)) != NULL) {
+                    j+=(pass==1) ? sprintf(&dest[j], "%s", pw->pw_dir) : strlen(pw->pw_dir);
+                    i+=elen+1;
+                }
+                sfree(tmps);
+            }
+        }
+        for (; str[i]; i++) {
+            if (!skipnext && str[i]=='\\') {
                 skipnext=1;
-            } else if (skipnext==0 && str[i]=='$') {
+                continue;
+            } else if (!skipnext && str[i]=='$') {
                 /* get the env var that this corresponds to */
+                varname=NULL;
                 if (str[i+1]=='{' && ((tmps=strchr(&str[i+2], '}'))!=NULL)) {
-/* I'm going to assume you're not an idiot and we won't have invalid chars inside
-   the ${}. That may be erroneous, but the worst that will happen is we get no 
-   answer from getenv() */                    
+/* I'm going to assume we won't have invalid chars inside the ${}; the worst 
+   that will happen if not is we get no answer from getenv() */
                     elen=tmps-&str[i+2];
                     varname=dupprintf("%.*s", elen, &str[i+2]);
-                    i+=elen+2;
-                } else if (isalpha(str[i+1]) || str[i+1]=='_') {
+                    i+=elen+2; /* +2 for {} */
+                } else if (isalpha(((unsigned char *)str)[i+1]) || str[i+1]=='_') {
                     elen=1;
-                    while (isalnum(str[i+elen+1]) || str[i+elen+1]=='_') elen++;
+                    while (isalnum(((unsigned char *)str)[i+elen+1]) || str[i+elen+1]=='_') elen++;
                     varname=dupprintf("%.*s", elen, &str[i+1]);
                     i+=elen;
-                } else {
-                    elen=-1;
                 }
-                if (elen > 0) {
+                if (varname) {
                     if ((tmps=getenv(varname))!=NULL) {
                         j+=(pass==1) ? sprintf(&dest[j], "%s", tmps) : strlen(tmps);
                     }
                     sfree(varname);
+                    continue;
                 }
-            } else if (skipnext==0 && str[i]=='~') {
-                if ((tmps=getenv("HOME"))!=NULL) {
-                    j+=(pass==1) ? sprintf(&dest[j], "%s", tmps) : strlen(tmps);
-                }
-            } else {
-                if (pass) dest[j]=str[i];
-                j++;
-                skipnext=0;
             }
+/* each successful substitution will have continue'd around the loop, so if we get
+   here we know we should treat the character as a literal */
+            if (pass) dest[j]=str[i];
+            j++;
+            skipnext=0;
         }
         if (pass==0) dest=smalloc(j+1);
     }
@@ -427,15 +443,25 @@ Filename *ConvertV70LogFileToV71(Filename *fp) {
    so you can do eg $HOME/puttylogs/&H&Y&M&D&T.log; unfortunately because
    $ is a valid filename character, and on v70 we would have simply written
    the string as-was, we have to convert any string loaded from a pre-v71 conf
-   and insert backslashes before $. This support function does that. */
+   and insert backslashes before $ and (any initial) ~.
+   
+   We also must insert an extra backslash in front of a backslash, because that's
+   a valid char too
+   */
     int i, j;
     char *newpath;
-    for (j=0,i=0; fp->path[i]; i++) if (fp->path[i]=='$' || fp->path[i]=='~') j++;
-/* i now contains the string length, j contains the number of $ signs */
+    j=0;
+    if (fp->path[0]=='~') j++; /* ~ is only special at the start of the string */
+    for (i=0; fp->path[i]; i++) if (fp->path[i]=='$' || fp->path[i]=='\\') j++;
+/* i now contains the string length, j contains the number of chars to be escaped */
     if (j) {
         newpath=smalloc(j+i+1);
-        for (i=0,j=0; fp->path[i]; i++) {
-            if (fp->path[i] == '$' || fp->path[i]=='~') {
+        j=0;
+        if (fp->path[0]=='~') {
+            newpath[j++]='\\';
+        }
+        for (i=0; fp->path[i]; i++) {
+            if (fp->path[i] == '$' || fp->path[i]=='\\') {
                 newpath[i+j] = '\\';
                 j++;
             }
